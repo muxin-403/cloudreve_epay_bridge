@@ -1964,10 +1964,17 @@ function renderJsonVisualEditor($configKey, $jsonData) {
              });
              
              // 显示选中的页面
-             document.getElementById(pageId + '-page').classList.add('active');
+             const targetPage = document.getElementById(pageId + '-page');
+             if (!targetPage) {
+                 return;
+             }
+             targetPage.classList.add('active');
              
              // 激活选中的导航项
-             document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+             const targetNav = document.querySelector(`[data-page="${pageId}"]`);
+             if (targetNav) {
+                 targetNav.classList.add('active');
+             }
              
              // 更新页面标题
              const titles = {
@@ -1979,8 +1986,32 @@ function renderJsonVisualEditor($configKey, $jsonData) {
                  'security': '安全配置',
                  'debug': '调试配置'
              };
-             document.getElementById('pageTitle').textContent = titles[pageId] || '配置管理';
+             const pageTitle = document.getElementById('pageTitle');
+             if (pageTitle) {
+                 pageTitle.textContent = titles[pageId] || '配置管理';
+             }
          }
+
+        let navClickBound = false;
+        function bindNavigationClick() {
+            if (navClickBound) {
+                return;
+            }
+            navClickBound = true;
+
+            document.addEventListener('click', function(e) {
+                const navItem = e.target.closest('.nav-item[data-page]');
+                if (!navItem) {
+                    return;
+                }
+                e.preventDefault();
+                const pageId = navItem.getAttribute('data-page');
+                showPage(pageId);
+            });
+        }
+
+        // 先绑定一次，避免后续初始化报错导致导航失效
+        bindNavigationClick();
         
         // 自动保存功能
         let autoSaveTimeout;
@@ -2272,6 +2303,7 @@ function renderJsonVisualEditor($configKey, $jsonData) {
             })
             .catch(error => {
                 console.error('获取兼容性配置失败:', error);
+                const currentCompatibilityData = {};
                 const existingCompatibilityItems = document.querySelectorAll('.compatibility-item');
                 existingCompatibilityItems.forEach(item => {
                     const methodKey = item.getAttribute('data-method');
@@ -2399,14 +2431,7 @@ function renderJsonVisualEditor($configKey, $jsonData) {
                  handleSDKVersionChange();
              }
              
-             // 添加导航点击事件
-             document.querySelectorAll('.nav-item[data-page]').forEach(item => {
-                 item.addEventListener('click', function(e) {
-                     e.preventDefault();
-                     const pageId = this.getAttribute('data-page');
-                     showPage(pageId);
-                 });
-             });
+             bindNavigationClick();
              
              // 点击模态框外部关闭
              window.addEventListener('click', function(event) {
