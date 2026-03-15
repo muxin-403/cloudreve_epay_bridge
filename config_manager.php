@@ -16,11 +16,42 @@ if (!isset($_SESSION['admin_logged_in'])) {
     exit;
 }
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+function validateCsrfToken() {
+    $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    $postToken = $_POST['csrf_token'] ?? '';
+    $token = $headerToken !== '' ? $headerToken : $postToken;
+
+    if ($token === '' || empty($_SESSION['csrf_token'])) {
+        return false;
+    }
+
+    return hash_equals($_SESSION['csrf_token'], $token);
+}
+
 $error = '';
 $success = '';
+$csrfValid = true;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrfValid = validateCsrfToken();
+    if (!$csrfValid) {
+        $action = $_POST['action'] ?? '';
+        if (in_array($action, ['get_compatibility_config', 'auto_save'], true)) {
+            header('Content-Type: application/json');
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'CSRF token 无效']);
+            exit;
+        }
+        $error = 'CSRF token 无效，请刷新页面后重试。';
+    }
+}
 
 // 处理AJAX获取兼容性配置请求
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_compatibility_config') {
+if ($csrfValid && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_compatibility_config') {
     header('Content-Type: application/json');
     
     try {
@@ -34,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // 处理AJAX自动保存请求
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'auto_save') {
+if ($csrfValid && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'auto_save') {
     header('Content-Type: application/json');
     
     try {
@@ -131,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // 处理配置更新
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($csrfValid && $_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $action = $_POST['action'] ?? '';
         
@@ -1898,8 +1929,30 @@ function renderJsonVisualEditor($configKey, $jsonData) {
     </div>
     
     <script>
+        const CSRF_TOKEN = <?php echo json_encode($_SESSION['csrf_token'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+
+        function withCsrfHeaders(headers = {}) {
+            return Object.assign({}, headers, {
+                'X-CSRF-Token': CSRF_TOKEN
+            });
+        }
+
+        function attachCsrfFieldToForms() {
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                let tokenInput = form.querySelector('input[name="csrf_token"]');
+                if (!tokenInput) {
+                    tokenInput = document.createElement('input');
+                    tokenInput.type = 'hidden';
+                    tokenInput.name = 'csrf_token';
+                    form.appendChild(tokenInput);
+                }
+                tokenInput.value = CSRF_TOKEN;
+            });
+        }
+
         // 页面切换功能
-         function showPage(pageId) {
+        function showPage(pageId) {
              // 隐藏所有页面
              document.querySelectorAll('.config-page').forEach(page => {
                  page.classList.remove('active');
@@ -1942,6 +1995,7 @@ function renderJsonVisualEditor($configKey, $jsonData) {
         function saveConfig(form) {
             const formData = new FormData(form);
             formData.append('action', 'auto_save');
+            formData.set('csrf_token', CSRF_TOKEN);
             
             // 显示保存指示器
              const indicator = document.getElementById('autoSaveIndicator');
@@ -1950,6 +2004,7 @@ function renderJsonVisualEditor($configKey, $jsonData) {
             
             fetch('config_manager.php', {
                 method: 'POST',
+                headers: withCsrfHeaders(),
                 body: formData
             })
             .then(response => response.json())
@@ -2205,10 +2260,10 @@ function renderJsonVisualEditor($configKey, $jsonData) {
             // 从数据库重新加载兼容性配置数据
             fetch(window.location.href, {
                 method: 'POST',
-                headers: {
+                headers: withCsrfHeaders({
                     'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'action=get_compatibility_config'
+                }),
+                body: 'action=get_compatibility_config&csrf_token=' + encodeURIComponent(CSRF_TOKEN)
             })
             .then(response => response.json())
             .then(data => {
@@ -2325,6 +2380,8 @@ function renderJsonVisualEditor($configKey, $jsonData) {
         
         // 为所有表单元素添加自动保存事件监听器
          document.addEventListener('DOMContentLoaded', function() {
+             attachCsrfFieldToForms();
+
              const forms = document.querySelectorAll('.auto-save-form');
              forms.forEach(form => {
                  const inputs = form.querySelectorAll('input, select, textarea');

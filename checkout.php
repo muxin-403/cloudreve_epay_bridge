@@ -1,9 +1,7 @@
-﻿<?php
+<?php
 /**
  * Checkout page (Vue-powered frontend)
  */
-
-declare(strict_types=1);
 
 require_once 'includes/Database.php';
 require_once 'includes/Logger.php';

@@ -34,6 +34,12 @@ try {
         exit;
     }
     
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateCsrfToken()) {
+        http_response_code(403);
+        echo json_encode(['error' => 'CSRF token 无效']);
+        exit;
+    }
+
     $action = $_GET['action'] ?? '';
     
     switch ($action) {
@@ -58,6 +64,18 @@ try {
 } catch (Exception $e) {
     http_response_code(500);
     echo json_encode(['error' => $e->getMessage()]);
+}
+
+function validateCsrfToken() {
+    $headerToken = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+    $postToken = $_POST['csrf_token'] ?? '';
+    $token = $headerToken !== '' ? $headerToken : $postToken;
+
+    if ($token === '' || empty($_SESSION['csrf_token'])) {
+        return false;
+    }
+
+    return hash_equals($_SESSION['csrf_token'], $token);
 }
 
 /**

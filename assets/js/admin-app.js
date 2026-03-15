@@ -98,6 +98,14 @@
         this.loadOrders();
       },
       methods: {
+        getSecurityHeaders(extraHeaders = {}) {
+          const headers = { ...extraHeaders };
+          const csrfToken = this.state && this.state.csrfToken;
+          if (csrfToken) {
+            headers['X-CSRF-Token'] = csrfToken;
+          }
+          return headers;
+        },
         setRuntimeMessage(type, text) {
           this.runtimeMessage.type = type;
           this.runtimeMessage.text = text;
@@ -227,6 +235,7 @@
           try {
             const data = await this.requestJson('admin_api.php?action=clean_expired', {
               method: 'POST',
+              headers: this.getSecurityHeaders(),
             });
 
             if (!data || !data.success) {

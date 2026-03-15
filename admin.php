@@ -1,14 +1,16 @@
-﻿<?php
+<?php
 /**
  * Admin page (Vue-powered frontend)
  */
-
-declare(strict_types=1);
 
 require_once 'includes/Database.php';
 require_once 'includes/Logger.php';
 
 session_start();
+
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 try {
     $db = new Database();
@@ -181,6 +183,7 @@ $adminState = [
         'config' => 'config_manager.php',
         'logout' => 'admin.php?logout=1',
     ],
+    'csrfToken' => $_SESSION['csrf_token'],
 ];
 
 $theme = $uiConfig['theme'] ?? [];

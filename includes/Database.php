@@ -17,7 +17,21 @@ class Database {
             // 确保数据库目录存在
             $dbDir = dirname(DB_PATH);
             if (!is_dir($dbDir)) {
-                mkdir($dbDir, 0755, true);
+                if (!mkdir($dbDir, 0755, true) && !is_dir($dbDir)) {
+                    throw new Exception('数据库目录创建失败: ' . $dbDir);
+                }
+            }
+
+            if (!is_writable($dbDir)) {
+                throw new Exception('数据库目录不可写: ' . $dbDir);
+            }
+
+            if (!file_exists(DB_PATH)) {
+                if (@file_put_contents(DB_PATH, '', FILE_APPEND) === false) {
+                    throw new Exception('无法创建数据库文件: ' . DB_PATH);
+                }
+            } elseif (!is_writable(DB_PATH)) {
+                throw new Exception('数据库文件不可写: ' . DB_PATH);
             }
             
             $this->pdo = new PDO('sqlite:' . DB_PATH);
@@ -28,7 +42,7 @@ class Database {
             $this->createTables();
             
         } catch (PDOException $e) {
-            throw new Exception('数据库连接失败: ' . $e->getMessage());
+            throw new Exception('数据库连接失败，请检查 database 目录权限: ' . DB_PATH . ' | ' . $e->getMessage());
         }
     }
     
