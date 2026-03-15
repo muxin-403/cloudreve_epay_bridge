@@ -2,7 +2,7 @@
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libzip-dev libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_sqlite sqlite3 \
+    && docker-php-ext-install pdo_sqlite \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
