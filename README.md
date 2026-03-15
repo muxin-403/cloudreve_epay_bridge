@@ -1,125 +1,125 @@
-# Cloudreve Cashier
+# Cloudreve Epay Bridge
 
-**一个为 Cloudreve V4 设计的现代化、功能丰富的易支付收银台。**
+Cloudreve V4 的易支付收银桥接服务，提供订单创建、状态查询、收银台支付和后台管理能力。
 
-<p align="center">
-<img alt="PHP Version" src="https://img.shields.io/badge/PHP-%3E%3D%207.4-8892BF?style=for-the-badge&logo=php" />
-<img alt="License" src="https://img.shields.io/badge/License-GPL%20v3-blue?style=for-the-badge" />
-<a href="https://discord.gg/RSj63kNVwK" >
-<img alt="Discord" src="https://img.shields.io/badge/Discord-Join%20Chat-7289DA?style=for-the-badge&logo=discord" />
-</a>
-</p>
+## 当前版本
 
------
+- 版本：`0.0.1`
+- 核心变化：
+- 收银台页面 `checkout.php` 已改为 Vue 前端驱动
+- 管理后台页面 `admin.php`（登录 + 订单列表）已改为 Vue 前端驱动
+- 新增单文件构建脚本与自动发布流水线
 
-Cloudreve Cashier 是一个专为 [Cloudreve V4](https://github.com/cloudreve/Cloudreve) 设计的支付解决方案，通过集成易支付（Epay）接口，为您的云存储服务提供无缝的收款体验。它拥有强大的管理后台、灵活的配置选项和现代化的响应式界面。
+## 主要特性
 
-<img src="https://static-smikuy.lucloud.top/PicGo/202506300543555.png?imageSlim" alt="管理后台-云盘支付收银台" style="zoom:33%;" /><img src="https://static-smikuy.lucloud.top/PicGo/202506300542161.png?imageSlim" alt="云盘支付收银台" style="zoom: 33%;" />
+- Cloudreve V4 接口兼容（创建订单 / 查询状态）
+- Epay 多支付渠道支持（支付宝、微信、QQ 钱包、云闪付等）
+- 后台订单查询、筛选、分页、统计、过期订单清理
+- 可视化配置管理（`config_manager.php`）
+- 环境识别与支付方式推荐 / 自动跳转
+- Docker 构建支持
+- 单文件运行包构建支持（standalone）
 
-## ✨ 主要特性
+## 系统要求
 
-  - **🚀 多渠道支付**：全面支持支付宝、微信支付、QQ钱包、云闪付等主流支付方式。
-  - **💼 可视化管理**：内置强大的管理后台，轻松查询订单、管理配置、追踪日志。
-  - **🔧 高度兼容**：同时兼容 Epay SDK v1.0 和 v2.0，迁移无忧。
-  - **📱 响应式设计**：完美适配 PC 和移动设备，提供一致的用户体验。
-  - **🔒 安全可靠**：内置签名验证与防重放攻击机制，保障每一笔交易的安全。
-  - **⚙️ 智能路由**：自动检测用户环境（微信/支付宝/QQ），并推荐最佳支付方式(微信/支付宝等环境支持直接跳转)。
+- PHP `>= 8.0`（建议 8.2）
+- SQLite `3`
+- PHP 扩展：`pdo_sqlite`, `json`, `openssl`, `curl`, `zip`（构建单文件时）
 
-## 🛠️ 系统要求
+## 快速开始
 
-  - **PHP** \>= `7.4`
-  - **SQLite** `3`
-  - PHP 扩展: `cURL`, `JSON`, `OpenSSL`
+1. 将项目部署到 Web 根目录
+2. 访问 `install.php` 完成初始化
+3. 在 Cloudreve 中配置支付接口地址为：
 
-## 🚀 快速安装
+```text
+https://your-domain/api.php
+```
 
-只需简单的几步即可完成安装和部署。
+## 本地运行（开发）
 
-1.  **下载源码**
-    将项目文件下载并解压到您的 Web 服务器根目录。
+```bash
+php -S 0.0.0.0:8080 -t .
+```
 
-2.  **访问安装程序**
-    在浏览器中打开 `http(s)://your-domain/install.php`。
+然后访问 `http://127.0.0.1:8080/install.php`。
 
-3.  **填写配置信息**
-    根据页面提示，配置 Epay 接口信息（如接口地址、商户ID、密钥等）。
+## Docker 运行
 
-4.  **设置管理员密码**
-    为您的管理后台设置一个安全的密码。
+### 本地构建
 
-5.  **完成**
-    安装程序将自动完成剩余步骤，之后即可开始使用！
+```bash
+docker build -t cloudreve-epay-bridge:0.0.1 .
+docker run --rm -p 8080:80 cloudreve-epay-bridge:0.0.1
+```
 
-## 🔌 Cloudreve 集成
+### GitHub Action 产物
 
-将收银台与您的 Cloudreve 网站连接起来非常简单：
+流水线会生成 Docker 镜像 tar 包（artifact），可下载后加载：
 
-1.  登录您的 Cloudreve 管理后台。
-2.  导航到 **“参数设置”** -\> **“支付与充值”** -\> **“支付接口”**。
-3.  添加一个新的 **“自定义支付接口”**。
-4.  将 **“支付接口地址”** 设置为：
-    ```
-    http(s)://your-domain/api.php
-    ```
-5.  **“通信密钥”** 在当前版本中可以任意填写。
-6.  保存设置即可生效。
+```bash
+docker load -i cloudreve_epay_bridge-v0.0.1.tar
+```
 
-## ⚙️ 详细配置
+## 单文件运行
 
-所有系统配置项均存储在数据库中，您可以通过以下任一方式进行管理：
+### 构建
 
-  - **安装时配置**：在 `install.php` 页面进行初始配置。
-  - **后台管理**：登录 `admin.php` 后，在配置管理页面随时修改。
+```bash
+php scripts/build-single.php --version=0.0.1
+```
 
-<details>
-<summary>
-<strong>点击展开查看主要配置分组</strong>
-</summary>
-  - **Epay 配置**：接口地址、商户ID、密钥。
-  - **收银台配置**：收银台URL、网站名称。
-  - **支付配置**：支付方式开关、SDK 兼容性、默认推荐设置。
-  - **安全配置**：请求来源域名白名单、安全选项。
-  - **UI 配置**：主题颜色、布局样式。
-  - **调试配置**：日志级别、错误信息显示开关。
-</details>
+输出文件：
 
-## 🤔 故障排查
+```text
+dist/cloudreve_epay_bridge-v0.0.1.php
+```
 
-遇到问题时，请首先尝试以下步骤：
+### 运行
 
-1.  **安装失败**
+```bash
+php dist/cloudreve_epay_bridge-v0.0.1.php --host=0.0.0.0 --port=8080
+```
 
-      - 检查 PHP 版本是否 `>= 7.4`。
-      - 确保 `database/` 和 `logs/` 目录拥有写入权限。
-      - 确认 `php-sqlite3` 扩展已正确安装并启用。
+## GitHub Actions 自动构建
 
-2.  **支付失败**
+工作流文件：`.github/workflows/build-release.yml`
 
-      - 核对 Epay 配置信息（商户ID、密钥）是否准确无误。
-      - 查看 `logs/error.log` 文件以获取详细的错误信息。
+触发方式：
 
-3.  **Cloudreve 无法调用**
+- 推送标签：`v*`（例如 `v0.0.1`）
+- 手动触发：`workflow_dispatch`
 
-      - 检查您的 Cloudreve 域名是否已添加到后台的“域名白名单”中。
-      - 确认在 Cloudreve 中填写的 `api.php` URL 是否可以公开访问。
+自动产物：
 
-## 💬 加入社群
+- 单文件运行包：`cloudreve_epay_bridge-v<version>.php`
+- 单文件校验：`cloudreve_epay_bridge-v<version>.php.sha256`
+- Docker 镜像 tar artifact
 
-遇到问题需要帮助，或是想分享您的想法？欢迎加入我们的社群！
+### 可选：自动推送 GHCR
 
-| 平台 | 链接 |
-| :---: | :--- |
-| **Discord** | [**点击加入**](https://discord.gg/RSj63kNVwK) |
-| **QQ群** | **565715364** ([点击加入](https://qm.qq.com/q/jmyvgV4rOE)) |
+如需自动推送 `ghcr.io/<owner>/<repo>:<version>`，请在仓库 Secret 中配置：
 
-<p align="center"\>
-<img src="https://static-smikuy-oss.lucloud.top/img/upload/PicGo202411191830583.webp?x-oss-process=style/webp" alt="QQ群二维码" width="200"/>
-</p>
+- `GHCR_PAT`（需要 `write:packages` 权限）
 
-## 📄 许可证
+未配置时，工作流会跳过 GHCR 推送步骤，但仍会完成 Docker 构建与 artifact 上传。
 
-本项目基于GPL-3.0 License开源。
+## 发布流程（建议）
 
------
+```bash
+git add .
+git commit -m "release: v0.0.1"
+git tag -a v0.0.1 -m "Release v0.0.1"
+git push origin main
+git push origin v0.0.1
+```
 
-> **重要提示**: 为了您的资产安全，请务必在生产环境中修改默认的管理员密码，并定期备份 `database/` 目录下的数据库文件。
+## 常见问题
+
+- `write_package` 报错：说明 GHCR 推送权限不足，配置 `GHCR_PAT` 即可
+- `strict_types declaration must be the very first statement`：检查 PHP 文件是否含 BOM
+- SQLite 初始化失败：确认 `database/` 目录可写
+
+## 许可证
+
+本项目采用 `GPL-3.0` 许可证，详见 `LICENSE`。
